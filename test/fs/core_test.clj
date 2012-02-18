@@ -18,8 +18,8 @@
     root))
 
 (fact "Makes paths absolute."
-  (file ".") => @cwd
-  (file "foo") => (io/file @cwd "foo"))
+  (file ".") => @@cwd
+  (file "foo") => (io/file @@cwd "foo"))
 
 (fact "Expands path to current user."
   (let [user (System/getProperty "user.home")]
@@ -90,10 +90,10 @@
     (delete tmp)))
 
 (fact
-  (absolute-path "foo") => (str (io/file @cwd "foo")))
+  (absolute-path "foo") => (str (io/file @@cwd "foo")))
 
 (fact
-  (normalized-path ".") => @cwd)
+  (normalized-path ".") => @@cwd)
 
 (fact
   (base-name "foo/bar") => "bar"
@@ -243,9 +243,9 @@
     ".bashrc"       ".bashrc")
 
 (fact
-  (let [old @cwd]
+  (let [old @@cwd]
     (chdir "test")
-    @cwd => (io/file old "test")))
+    @@cwd => (io/file old "test")))
 
 (against-background
  [(before :contents (chdir "fs/testfiles"))]
