@@ -3,7 +3,8 @@
   (:refer-clojure :exclude [name parents])
   (:require [clojure.zip :as zip]
             [clojure.java.io :as io]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [fs.utils :as fsu])
   (:import (java.io File FilenameFilter)))
 
 ;; Once you've started a JVM, that JVM's working directory is set in stone
@@ -15,7 +16,12 @@
 (def ^{:doc "Current working directory. This cannot be changed in the JVM.
              Changing this will only change the working directory for functions
              in this library."}
-  cwd (atom (.getCanonicalFile (io/file "."))))
+  ;;cwd (atom (.getCanonicalFile (io/file "."))))
+  cwd (fsu/inheritable-thread-local fsu/copy-atom-child-init (atom (.getCanonicalFile (io/file ".")))))
+
+; (def counter (inheritable-thread-local copy-atom-child-init (atom 0)))
+; (swap! @counter inc)
+; (prinln "counter:" @@counter)
 
 (let [homedir (io/file (System/getProperty "user.home"))
       usersdir (.getParent homedir)]
@@ -53,17 +59,18 @@
   [path & paths]
   (when-let [path (apply
                    io/file (if (= path ".")
-                             @cwd
+                             @@cwd
                              path)
                    paths)]
     (if (.isAbsolute ^File path)
       path
-      (io/file @cwd path))))
+      (io/file @@cwd path))))
 
 (defn list-dir
   "List files and directories under path."
-  [path]
-  (seq (.list (file path))))
+  ([] (list-dir "."))
+  ([path]
+    (seq (.list (file path)))))
 
 (defn executable?
   "Return true if path is executable."
@@ -369,7 +376,7 @@ If 'trim-ext' is true, any extension is trimmed."
 (defn chdir
   "Change directory. This only changes the value of cwd
    (you can't change directory in Java)."
-  [path] (swap! cwd (constantly (file path))))
+  [path] (swap! @cwd (constantly (file path))))
 
 (defn parents
   "Get all the parent directories of a path."
